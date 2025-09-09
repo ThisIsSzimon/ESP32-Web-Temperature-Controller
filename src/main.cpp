@@ -6,7 +6,7 @@ extern "C" {
 
 extern "C" void app_main(void) {
   ESP_LOGI("MAIN","Hello from C++");
-  while (true) { 
-    vTaskDelay(pdMS_TO_TICKS(1000)); 
-}
+    while (true) { 
+        vTaskDelay(pdMS_TO_TICKS(1000)); 
+    }
 }   
