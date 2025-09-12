@@ -15,5 +15,10 @@
   "C_Cpp.default.configurationProvider": "platformio",
   "C_Cpp.intelliSenseEngine": "default",
   "C_Cpp.errorSquiggles": "enabled",
+  "files.associations": {
+    "cstdlib": "cpp",
+    "cstring": "cpp",
+    "string": "cpp"
+  },
 
 }

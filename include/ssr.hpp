@@ -5,9 +5,7 @@ class SSR {
 public:
   explicit SSR(gpio_num_t pin);
   void set(bool on);
-  bool state() const {
-    return state_;
-  }
+  bool state() const { return state_; }
 
 private:
   gpio_num_t pin_;

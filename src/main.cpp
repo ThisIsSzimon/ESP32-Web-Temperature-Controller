@@ -1,9 +1,9 @@
+#include "sensor_adc.hpp"
 #include "wifi_credentials.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <string>
-
 
 extern "C" {
 #include "cJSON.h"
@@ -21,6 +21,7 @@ extern "C" {
 
 // ===================== KONFIG =====================
 static const char *TAG = "SSD1306_WEATHER";
+static const char *TAG_ADC = "TMP36_MAIN";
 
 // Open-Meteo: Ateny (aktualna pogoda)
 static const char *WEATHER_URL =
@@ -325,23 +326,37 @@ extern "C" void app_main(void) {
   draw_text(0, 0, "Pogoda: Ateny");
   draw_text(0, 2, "Laczenie...");
 
+  TMP36Sensor sensor(ADC1_CHANNEL_6, 16);
+  sensor.calibrateKnownVout(0.71f);
+
   while (true) {
-    float tC;
-    bool ok = http_get_temp_c(tC);
+    float tC_aten, tC_adc, v_adc;
+    bool ok = http_get_temp_c(tC_aten);
 
     oled_clear();
     draw_text(0, 0, "Pogoda: Ateny");
 
     if (ok) {
       char line[32];
-      snprintf(line, sizeof(line), "Temp: %.1f C", tC);
+      snprintf(line, sizeof(line), "API: %.1f C", tC_aten);
       draw_text(0, 2, line);
-      ESP_LOGI(TAG, "Ateny: %.1f C", tC);
+      ESP_LOGI(TAG, "Ateny: %.1f C", tC_aten);
     } else {
-      draw_text(0, 2, "Blad pobierania");
+      draw_text(0, 2, "API: blad");
       ESP_LOGW(TAG, "HTTP/parse failed");
     }
 
-    vTaskDelay(pdMS_TO_TICKS(60000)); // odświeżaj co 60 s
+    // --- temperatura lokalna z TMP36 ---
+    if (sensor.readCelsius(tC_adc)) {
+      char line2[32];
+      snprintf(line2, sizeof(line2), "Lokal: %.1f C", tC_adc);
+      draw_text(0, 4, line2);
+      ESP_LOGI(TAG_ADC, "TMP36: %.2f C", tC_adc);
+    } else {
+      draw_text(0, 4, "Lokal: blad");
+      ESP_LOGW(TAG_ADC, "TMP36 read failed");
+    }
+
+    vTaskDelay(pdMS_TO_TICKS(20000)); // odświeżaj co 20 s
   }
 }
