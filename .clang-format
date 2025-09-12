@@ -1,9 +1,20 @@
 BasedOnStyle: LLVM
 IndentWidth: 2
 TabWidth: 2
-UseTab: Never
+ColumnLimit: 120
+
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortBlocksOnASingleLine: Always
+AllowShortCaseLabelsOnASingleLine: true
+
+BinPackArguments: false
+BinPackParameters: false
 BreakBeforeBraces: Attach
-AllowShortBlocksOnASingleLine: Never
-AllowShortIfStatementsOnASingleLine: Never
-AllowShortFunctionsOnASingleLine: Empty
-SpaceBeforeParens: ControlStatements
+ReflowComments: false
+
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignConsecutiveMacros: false
+
+BreakStringLiterals: false
