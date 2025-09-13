@@ -1,4 +1,7 @@
 #include "sensor_adc.hpp"
+#include "shared_state.hpp"
+#include "tasks/sensor_task.hpp"
+#include "tasks/weather_task.hpp"
 #include "wifi_credentials.h"
 #include <cstdio>
 #include <cstdlib>
@@ -21,7 +24,6 @@ extern "C" {
 
 // ===================== KONFIG =====================
 static const char *TAG = "SSD1306_WEATHER";
-static const char *TAG_ADC = "TMP36_MAIN";
 
 // Open-Meteo: Ateny (aktualna pogoda)
 static const char *WEATHER_URL =
@@ -322,41 +324,30 @@ extern "C" void app_main(void) {
 
   i2c_init();
   ssd1306_init_128x64();
+
   oled_clear();
   draw_text(0, 0, "Pogoda: Ateny");
   draw_text(0, 2, "Laczenie...");
 
-  TMP36Sensor sensor(ADC1_CHANNEL_6, 16);
+  g_data_mtx = xSemaphoreCreateMutex();
+
+  static TMP36Sensor sensor(ADC1_CHANNEL_6, 16);
   sensor.calibrateKnownVout(0.71f);
 
-  while (true) {
-    float tC_aten, tC_adc, v_adc;
-    bool ok = http_get_temp_c(tC_aten);
+  oled_clear();
+  draw_text(0, 0, "Pogoda: Ateny");
 
-    oled_clear();
-    draw_text(0, 0, "Pogoda: Ateny");
+  //adc1_config_width(ADC_WIDTH_BIT_12);
+  //adc1_config_channel_atten(ADC1_CHANNEL_6, ADC_ATTEN_DB_11);
 
-    if (ok) {
-      char line[32];
-      snprintf(line, sizeof(line), "API: %.1f C", tC_aten);
-      draw_text(0, 2, line);
-      ESP_LOGI(TAG, "Ateny: %.1f C", tC_aten);
-    } else {
-      draw_text(0, 2, "API: blad");
-      ESP_LOGW(TAG, "HTTP/parse failed");
-    }
+  // Start 1 Hz task (TMP36 + log + zapis do globalnej)
+  start_sensor_task(&sensor, /*prio=*/5, /*stack=*/4096);
 
-    // --- temperatura lokalna z TMP36 ---
-    if (sensor.readCelsius(tC_adc)) {
-      char line2[32];
-      snprintf(line2, sizeof(line2), "Lokal: %.1f C", tC_adc);
-      draw_text(0, 4, line2);
-      ESP_LOGI(TAG_ADC, "TMP36: %.2f C", tC_adc);
-    } else {
-      draw_text(0, 4, "Lokal: blad");
-      ESP_LOGW(TAG_ADC, "TMP36 read failed");
-    }
+  UiCallbacks ui{
+      .oled_clear = []() { oled_clear(); },
+      .draw_text = [](uint8_t c, uint8_t p, const char *s) { draw_text(c, p, s); },
+  };
 
-    vTaskDelay(pdMS_TO_TICKS(20000)); // odświeżaj co 20 s
-  }
+  // Start 60 s task (API + OLED)
+  start_weather_task(ui, /*get_weather:*/ &http_get_temp_c, /*prio=*/4, /*stack=*/6144);
 }
