@@ -1,5 +1,6 @@
 #include "tasks/weather_task.hpp"
 #include "shared_state.hpp"
+#include "ssr.hpp"
 
 #include <cmath>
 #include <cstdio>
@@ -8,51 +9,64 @@ extern "C" {
 #include "esp_log.h"
 }
 
-static const char *TAG_W = "WEATHER_TASK";
+static const char *TAG = "WEATHER_TASK";
+static constexpr float HYST = 0.3f; // histereza 0.3 C
 
 static void weather_task(void *arg) {
   auto *pack = static_cast<std::pair<UiCallbacks, WeatherFunc> *>(arg);
   UiCallbacks ui = pack->first;
   WeatherFunc get_weather = pack->second;
-  delete pack; // już niepotrzebne
+  delete pack;
+
+  bool relay_state = false; // bieżący stan przekaźnika
 
   for (;;) {
+    // 1) Pobierz temperaturę z API
     float t_api;
     bool ok = get_weather ? get_weather(t_api) : false;
 
-    float local_copy = NAN;
+    // 2) Zaktualizuj globalny stan
+    float t_local = NAN;
     if (g_data_mtx && xSemaphoreTake(g_data_mtx, pdMS_TO_TICKS(10)) == pdTRUE) {
-      local_copy = g_local_tempC;
+      if (ok) g_api_tempC = t_api;
+      t_local = g_local_tempC;
       xSemaphoreGive(g_data_mtx);
     }
 
+    // 3) OLED
     if (ui.oled_clear) ui.oled_clear();
     if (ui.draw_text) {
       ui.draw_text(0, 0, "Pogoda: Ateny");
       if (ok) {
-        char line[32];
-        snprintf(line, sizeof(line), "API: %.1f C", t_api);
-        ui.draw_text(0, 2, line);
-        ESP_LOGI(TAG_W, "Ateny: %.1f C", t_api);
+        char l1[32];
+        std::snprintf(l1, sizeof l1, "API:   %.1f C", t_api);
+        ui.draw_text(0, 2, l1);
+        ESP_LOGI(TAG, "Athens: %.1f C", t_api);
       } else {
-        ui.draw_text(0, 2, "API: blad");
+        ui.draw_text(0, 2, "API:   blad");
       }
-
-      if (!std::isnan(local_copy)) {
-        char line2[32];
-        snprintf(line2, sizeof(line2), "Lokal: %.1f C", local_copy);
-        ui.draw_text(0, 4, line2);
+      if (!std::isnan(t_local)) {
+        char l2[32];
+        std::snprintf(l2, sizeof l2, "Lokal: %.1f C", t_local);
+        ui.draw_text(0, 4, l2);
       } else {
         ui.draw_text(0, 4, "Lokal: --.- C");
       }
     }
 
-    vTaskDelay(pdMS_TO_TICKS(60000)); // 60 s
+    // 4) Decyzja: local < api ? ON : OFF (z histerezą)
+    if (!std::isnan(t_local) && !std::isnan(g_api_tempC)) {
+      // histereza wokół progu t_api
+      if (t_local < g_api_tempC - HYST) relay_state = true;       // załącz niżej
+      else if (t_local > g_api_tempC + HYST) relay_state = false; // wyłącz wyżej
+      relay_set(relay_state);
+    }
+
+    vTaskDelay(pdMS_TO_TICKS(10000)); // co 60 s
   }
 }
 
 void start_weather_task(const UiCallbacks &ui, WeatherFunc get_weather, UBaseType_t prio, uint32_t stack) {
-  // spakuj parametry do heapu, żeby przekazać do taska
   auto *pack = new std::pair<UiCallbacks, WeatherFunc>(ui, get_weather);
-  xTaskCreate(weather_task, "weather_oled_task", stack, pack, prio, nullptr);
+  xTaskCreate(weather_task, "weather_task", stack, pack, prio, nullptr);
 }

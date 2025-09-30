@@ -6,14 +6,13 @@ extern "C" {
 #include "freertos/task.h"
 }
 
-// Funkcje wyświetlacza przekazywane jako callbacki:
+// Callbacki do Twoich funkcji OLED:
 struct UiCallbacks {
-  void (*oled_clear)();                                        // np. Twoje oled_clear()
-  void (*draw_text)(uint8_t col, uint8_t page, const char *s); // np. Twoje draw_text(...)
+  void (*oled_clear)();
+  void (*draw_text)(uint8_t col, uint8_t page, const char *s);
 };
 
-// Sygnatura funkcji pobierającej temperaturę z API:
+// Funkcja pobierająca temperaturę z API (Ateny)
 using WeatherFunc = bool (*)(float &out_tempC);
 
-// Startuje task 60 s: pobiera API i odświeża OLED (API + ostatni lokalny odczyt)
 void start_weather_task(const UiCallbacks &ui, WeatherFunc get_weather, UBaseType_t prio = 4, uint32_t stack = 6144);

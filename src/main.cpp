@@ -1,5 +1,6 @@
 #include "sensor_adc.hpp"
 #include "shared_state.hpp"
+#include "ssr.hpp"
 #include "tasks/sensor_task.hpp"
 #include "tasks/weather_task.hpp"
 #include "wifi_credentials.h"
@@ -7,6 +8,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+
 
 extern "C" {
 #include "cJSON.h"
@@ -330,6 +332,7 @@ extern "C" void app_main(void) {
   draw_text(0, 2, "Laczenie...");
 
   g_data_mtx = xSemaphoreCreateMutex();
+  relay_init();
 
   static TMP36Sensor sensor(ADC1_CHANNEL_6, 16);
   sensor.calibrateKnownVout(0.71f);
