@@ -1,0 +1,8 @@
+{
+  "name": "esp32-web-temperature-controller",
+  "private": true,
+  "scripts": {
+    "gen:raw-links": "node scripts/generate_raw_links.js"
+  },
+  "devDependencies": {}
+}

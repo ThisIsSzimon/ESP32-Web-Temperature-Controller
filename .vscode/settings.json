@@ -20,5 +20,19 @@
     "cstring": "cpp",
     "string": "cpp"
   },
+  "emeraldwalk.runonsave": {
+    "commands": [
+      {
+        "match": ".*",               // każda zapisana ścieżka
+        "isAsync": false,
+        "cmd": "node scripts/generate_raw_links.js",
+        "runIn": "workspace"         // uruchamiaj z katalogu roboczego
+      }
+    ]
+  },
+  // (opcjonalnie) przekaż nazwę brancha do skryptu:
+  "terminal.integrated.env.windows": { "RAW_BRANCH": "main" },
+  "terminal.integrated.env.linux":   { "RAW_BRANCH": "main" },
+  "terminal.integrated.env.osx":     { "RAW_BRANCH": "main" }
 
 }

@@ -2,6 +2,7 @@ https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/
 https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/main/.gitignore
 https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/main/.vscode/extensions.json
 https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/main/.vscode/settings.json
+https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/main/ALL_FILES_RAW.txt
 https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/main/CMakeLists.txt
 https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/main/README.md
 https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/main/include/README
@@ -11,8 +12,10 @@ https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/
 https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/main/include/tasks/sensor_task.hpp
 https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/main/include/tasks/weather_task.hpp
 https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/main/lib/README
+https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/main/package.json
 https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/main/partitions.csv
 https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/main/platformio.ini
+https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/main/scripts/generate_raw_links.js
 https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/main/sdkconfig.esp32doit-devkit-v1
 https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/main/sdkconfig.esp32doit-devkit-v1.old
 https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/main/src/CMakeLists.txt
