@@ -1,6 +1,6 @@
 #include "web/index_html.hpp"
 
-const char INDEX_HTML[] =
+extern const char INDEX_HTML[] =
     "<!doctype html><html lang=\"pl\"><meta charset=\"utf-8\">"
     "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
     "<title>Temperature Controller</title>"
@@ -33,12 +33,15 @@ const char INDEX_HTML[] =
     "  manualWrap.style.display = api ? 'none':'block';"
     "  manualTemp.value = Number(s.manualTemp ?? 21).toFixed(1);"
     "}"
+    "async function persist(mode,manualVal){"
+    "  const body = { sourceMode: mode, manualTemp: manualVal };"
+    "  const r = await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});"
+    "  return await r.json();"
+    "}"
     "async function saveSettings(){"
-    "  const body = {"
-    "    sourceMode: useApi.checked ? 'api':'manual',"
-    "    manualTemp: parseFloat(manualTemp.value||'21')"
-    "  };"
-    "  await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});"
+    "  const mode = useApi.checked ? 'api' : 'manual';"
+    "  const mval = parseFloat(manualTemp.value||'21');"
+    "  await persist(mode, mval);"
     "  await refreshCurrent();"
     "  manualWrap.style.display = useApi.checked ? 'none':'block';"
     "}"
@@ -48,9 +51,16 @@ const char INDEX_HTML[] =
     "  currentSrc.textContent = j.source;"
     "}"
     "saveSettings.onclick = saveSettings;"
-    "useApi.onchange = e => manualWrap.style.display = e.target.checked ? 'none':'block';"
+    "useApi.onchange = async e => {"
+    "  const mode = e.target.checked ? 'api' : 'manual';"
+    "  const mval = parseFloat(manualTemp.value||'21');"
+    "  await persist(mode, mval);"
+    "  manualWrap.style.display = e.target.checked ? 'none':'block';"
+    "  await refreshCurrent();"
+    "};"
+    "manualTemp.addEventListener('change', saveSettings);"
     "loadSettings(); refreshCurrent(); setInterval(refreshCurrent, 5000);"
     "</script>"
     "</html>";
 
-const size_t INDEX_HTML_LEN = sizeof(INDEX_HTML) - 1;
+extern const size_t INDEX_HTML_LEN = sizeof(INDEX_HTML) - 1;

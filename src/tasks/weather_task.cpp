@@ -1,7 +1,9 @@
 #include "tasks/weather_task.hpp"
+#include "settings.hpp"
 #include "shared_state.hpp"
 #include "ssr.hpp"
-#include "temperature_source.hpp" // Provider temperatury (API/manual)
+#include "temperature_source.hpp"
+
 
 #include <cmath>
 #include <cstdio>
@@ -34,42 +36,50 @@ static void weather_task(void *arg) {
     float t_local = NAN;
     if (g_data_mtx && xSemaphoreTake(g_data_mtx, pdMS_TO_TICKS(10)) == pdTRUE) {
       if (ok) {
-        g_api_tempC = t_api;                     // surowe API do globali
-        temperature_source_set_api_value(t_api); // udostępniamy przez provider (API/manual)
+        g_api_tempC = t_api;                     // zachowaj surowe API
+        temperature_source_set_api_value(t_api); // udostępnij przez provider
       }
-      t_local = g_local_tempC; // ostatnia lokalna z TMP36
+      t_local = g_local_tempC; // ostatni pomiar z TMP36
       xSemaphoreGive(g_data_mtx);
     }
 
-    // 3) OLED
+    // 3) Odczytaj tryb i ewentualną wartość manualną
+    AppSettings s = settings_get();
+    const bool modeManual = (s.sourceMode == TempSourceMode::Manual);
+
+    // 4) OLED – zgodnie z Twoim formatem
     if (ui.oled_clear) ui.oled_clear();
     if (ui.draw_text) {
-      ui.draw_text(0, 0, "Pogoda: Ateny");
-      if (ok) {
+      if (modeManual) {
+        ui.draw_text(0, 0, "Pogoda: Manual");
         char l1[32];
-        std::snprintf(l1, sizeof l1, "API:   %.1f C", t_api);
+        std::snprintf(l1, sizeof l1, "Manual: %.1f C", s.manualTempC);
         ui.draw_text(0, 2, l1);
-        ESP_LOGI(TAG, "Athens: %.1f C", t_api);
       } else {
-        ui.draw_text(0, 2, "API:   blad");
+        ui.draw_text(0, 0, "Pogoda: Ateny");
+        if (ok) {
+          char l1[32];
+          std::snprintf(l1, sizeof l1, "API:  %.1f C", t_api);
+          ui.draw_text(0, 2, l1);
+          ESP_LOGI(TAG, "Athens: %.1f C", t_api);
+        } else {
+          ui.draw_text(0, 2, "API:  blad");
+        }
       }
       if (!std::isnan(t_local)) {
         char l2[32];
-        std::snprintf(l2, sizeof l2, "Lokal: %.1f C", t_local);
+        std::snprintf(l2, sizeof l2, "Lokal %.1f C", t_local);
         ui.draw_text(0, 4, l2);
       } else {
-        ui.draw_text(0, 4, "Lokal: --.- C");
+        ui.draw_text(0, 4, "Lokal --.- C");
       }
     }
 
-    // 4) Docelowa temperatura (prog) do sterowania z providera:
-    //    - gdy tryb "API": ostatnia z API
-    //    - gdy tryb "manual": wartość z NVS ustawiona w web-UI
+    // 5) Docelową temperaturę (setpoint) z providera
     const float t_set = temperature_source_get_c();
 
-    // 5) Decyzja: local < t_set ? ON : OFF (z histerezą)
+    // 6) Sterowanie z histerezą: local vs t_set
     if (!std::isnan(t_local) && !std::isnan(t_set)) {
-      // histereza wokół progu t_set
       if (t_local < t_set - HYST) relay_state = true;       // załącz niżej
       else if (t_local > t_set + HYST) relay_state = false; // wyłącz wyżej
       relay_set(relay_state);
