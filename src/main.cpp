@@ -1,8 +1,11 @@
+#include "http_server.hpp"
 #include "sensor_adc.hpp"
+#include "settings.hpp"
 #include "shared_state.hpp"
 #include "ssr.hpp"
 #include "tasks/sensor_task.hpp"
 #include "tasks/weather_task.hpp"
+#include "temperature_source.hpp"
 #include "wifi_credentials.h"
 #include <cstdio>
 #include <cstdlib>
@@ -40,7 +43,6 @@ constexpr uint8_t OLED_ADDR = 0x3C;
 constexpr int OLED_W = 128;
 constexpr int OLED_H = 64;
 
-// ===== prosta czcionka 5x7 (ASCII 32..127), kolumny, LSB=top =====
 static const uint8_t FONT5x7[96][5] = {
     {0x00, 0x00, 0x00, 0x00, 0x00}, // ' '
     {0x00, 0x00, 0x5F, 0x00, 0x00}, // '!'
@@ -322,6 +324,7 @@ static bool http_get_temp_c(float &out_temp) {
 // ===================== MAIN =====================
 extern "C" void app_main(void) {
   ESP_ERROR_CHECK(nvs_flash_init());
+  settings_init();
   wifi_init_connect();
 
   i2c_init();
@@ -340,9 +343,6 @@ extern "C" void app_main(void) {
   oled_clear();
   draw_text(0, 0, "Pogoda: Ateny");
 
-  //adc1_config_width(ADC_WIDTH_BIT_12);
-  //adc1_config_channel_atten(ADC1_CHANNEL_6, ADC_ATTEN_DB_11);
-
   // Start 1 Hz task (TMP36 + log + zapis do globalnej)
   start_sensor_task(&sensor, /*prio=*/5, /*stack=*/4096);
 
@@ -353,4 +353,6 @@ extern "C" void app_main(void) {
 
   // Start 60 s task (API + OLED)
   start_weather_task(ui, /*get_weather:*/ &http_get_temp_c, /*prio=*/4, /*stack=*/6144);
+
+  http_server_start();
 }

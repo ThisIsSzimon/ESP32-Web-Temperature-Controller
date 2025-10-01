@@ -6,7 +6,7 @@ extern "C" {
 #include "freertos/task.h"
 }
 
-// Callbacki do Twoich funkcji OLED:
+// Callbacki do funkcji OLED:
 struct UiCallbacks {
   void (*oled_clear)();
   void (*draw_text)(uint8_t col, uint8_t page, const char *s);

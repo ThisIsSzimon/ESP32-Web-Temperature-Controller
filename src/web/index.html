@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="pl">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Temperature Controller</title>
+<style>
+body{font-family:system-ui,Arial;margin:16px}
+.card{border:1px solid #ccc;border-radius:12px;padding:16px;max-width:520px}
+label{display:flex;gap:.5rem;align-items:center}
+#manualWrap{margin-top:.75rem}
+button{padding:.5rem .9rem;border-radius:10px;border:1px solid #999;background:#f5f5f5;cursor:pointer}
+small{color:#666}
+</style>
+<div class="card">
+  <h2>Źródło temperatury</h2>
+  <label><input id="useApi" type="checkbox">Używaj API pogody</label>
+  <div id="manualWrap">
+    <label>Temperatura (°C):
+      <input id="manualTemp" type="number" step="0.1" min="-40" max="80" style="width:6rem;">
+    </label>
+  </div>
+  <button id="saveSettings">Zapisz</button>
+  <p>Aktualnie używana: <strong id="currentVal">--</strong> °C
+     (<span id="currentSrc">--</span>)</p>
+  <p><small>Odświeża się co 5 s.</small></p>
+</div>
+<script>
+async function loadSettings(){
+  const s = await (await fetch('/api/settings')).json();
+  const api = s.sourceMode === 'api';
+  useApi.checked = api;
+  manualWrap.style.display = api ? 'none':'block';
+  manualTemp.value = Number(s.manualTemp ?? 21).toFixed(1);
+}
+async function saveSettings(){
+  const body = {
+    sourceMode: useApi.checked ? 'api':'manual',
+    manualTemp: parseFloat(manualTemp.value||'21')
+  };
+  await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  await refreshCurrent();
+  manualWrap.style.display = useApi.checked ? 'none':'block';
+}
+async function refreshCurrent(){
+  const j = await (await fetch('/api/current-temp')).json();
+  currentVal.textContent = Number(j.temp ?? 0).toFixed(1);
+  currentSrc.textContent = j.source;
+}
+saveSettings.onclick = saveSettings;
+useApi.onchange = e => manualWrap.style.display = e.target.checked ? 'none':'block';
+loadSettings(); refreshCurrent(); setInterval(refreshCurrent, 5000);
+</script>
+</html>
