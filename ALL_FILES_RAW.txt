@@ -5,6 +5,9 @@ https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/
 https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/main/ALL_FILES_RAW.txt
 https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/main/CMakeLists.txt
 https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/main/README.md
+https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/main/assets/webui/app.js
+https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/main/assets/webui/index.html
+https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/main/assets/webui/style.css
 https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/main/include/README
 https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/main/include/http_server.hpp
 https://raw.githubusercontent.com/ThisIsSzimon/ESP32-Web-Temperature-Controller/main/include/sensor_adc.hpp

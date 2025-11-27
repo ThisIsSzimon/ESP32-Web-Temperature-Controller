@@ -28,26 +28,25 @@ static void weather_task(void *arg) {
   bool relay_state = false; // bieżący stan przekaźnika
 
   for (;;) {
-    // 1) Pobierz temperaturę z API
+    // Pobranie temp z API
     float t_api = NAN;
     bool ok = get_weather ? get_weather(t_api) : false;
 
-    // 2) Zaktualizuj globalny stan + provider
+    // Zaktualizuj stan globalny
     float t_local = NAN;
     if (g_data_mtx && xSemaphoreTake(g_data_mtx, pdMS_TO_TICKS(10)) == pdTRUE) {
       if (ok) {
-        g_api_tempC = t_api;                     // zachowaj surowe API
-        temperature_source_set_api_value(t_api); // udostępnij przez provider
+        g_api_tempC = t_api;
+        temperature_source_set_api_value(t_api);
       }
       t_local = g_local_tempC; // ostatni pomiar z TMP36
       xSemaphoreGive(g_data_mtx);
     }
 
-    // 3) Odczytaj tryb i ewentualną wartość manualną
     AppSettings s = settings_get();
     const bool modeManual = (s.sourceMode == TempSourceMode::Manual);
 
-    // 4) OLED – zgodnie z Twoim formatem
+    // OLED
     if (ui.oled_clear) ui.oled_clear();
     if (ui.draw_text) {
       if (modeManual) {
@@ -75,17 +74,17 @@ static void weather_task(void *arg) {
       }
     }
 
-    // 5) Docelową temperaturę (setpoint) z providera
+    // Docelowa temperatura
     const float t_set = temperature_source_get_c();
 
-    // 6) Sterowanie z histerezą: local vs t_set
+    // Sterowanie z histerezą: local vs t_set
     if (!std::isnan(t_local) && !std::isnan(t_set)) {
-      if (t_local < t_set - HYST) relay_state = true;       // załącz niżej
-      else if (t_local > t_set + HYST) relay_state = false; // wyłącz wyżej
+      if (t_local < t_set - HYST) relay_state = true;
+      else if (t_local > t_set + HYST) relay_state = false;
       relay_set(relay_state);
     }
 
-    vTaskDelay(pdMS_TO_TICKS(10000)); // co 10 s
+    vTaskDelay(pdMS_TO_TICKS(10000));
   }
 }
 

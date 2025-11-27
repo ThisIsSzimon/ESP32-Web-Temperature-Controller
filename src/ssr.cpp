@@ -9,7 +9,6 @@ void relay_init() {
   io.intr_type = GPIO_INTR_DISABLE;
   gpio_config(&io);
 
-  // stan spoczynkowy = WYŁĄCZONY
   int off = RELAY_ACTIVE_LOW ? 1 : 0;
   gpio_set_level(RELAY_PIN, off);
 }

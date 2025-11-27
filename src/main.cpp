@@ -12,7 +12,6 @@
 #include <cstring>
 #include <string>
 
-
 extern "C" {
 #include "cJSON.h"
 #include "driver/i2c.h"
@@ -20,6 +19,7 @@ extern "C" {
 #include "esp_event.h"
 #include "esp_http_client.h"
 #include "esp_log.h"
+#include "esp_spiffs.h"
 #include "esp_wifi.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
@@ -27,7 +27,7 @@ extern "C" {
 #include "nvs_flash.h"
 }
 
-// ===================== KONFIG =====================
+// KONFIG
 static const char *TAG = "SSD1306_WEATHER";
 
 // Open-Meteo: Ateny (aktualna pogoda)
@@ -141,7 +141,7 @@ static const uint8_t FONT5x7[96][5] = {
     {0x10, 0x08, 0x08, 0x10, 0x08}, // '~'
 };
 
-// ===================== SSD1306 =====================
+// SSD1306
 static void i2c_init() {
   i2c_config_t c{};
   c.mode = I2C_MODE_MASTER;
@@ -188,9 +188,9 @@ static void ssd1306_init_128x64() {
   oled_cmd(0x00);
   oled_cmd(0x40);
   oled_cmd(0x8D);
-  oled_cmd(0x14); // charge pump on
+  oled_cmd(0x14);
   oled_cmd(0x20);
-  oled_cmd(0x00); // horizontal addressing
+  oled_cmd(0x00);
   oled_cmd(0xA1);
   oled_cmd(0xC8);
   oled_cmd(0xDA);
@@ -241,7 +241,23 @@ static void draw_text(uint8_t col, uint8_t page, const char *s) {
   }
 }
 
-// ===================== Wi-Fi =====================
+// SPIFFS
+static const char *TAG_FS = "FS";
+
+static void init_spiffs() {
+  esp_vfs_spiffs_conf_t conf = {
+      .base_path = "/spiffs", .partition_label = "webui", .max_files = 8, .format_if_mount_failed = true};
+  esp_err_t ret = esp_vfs_spiffs_register(&conf);
+  if (ret != ESP_OK) {
+    ESP_LOGE(TAG_FS, "SPIFFS mount failed (%s)", esp_err_to_name(ret));
+  } else {
+    size_t total = 0, used = 0;
+    esp_spiffs_info(conf.partition_label, &total, &used);
+    ESP_LOGI(TAG_FS, "SPIFFS mounted. Total=%u, Used=%u", (unsigned)total, (unsigned)used);
+  }
+}
+
+// Wi-Fi
 static EventGroupHandle_t wifi_event_group;
 static const int WIFI_CONNECTED_BIT = BIT0;
 
@@ -278,7 +294,7 @@ static void wifi_init_connect() {
   ESP_LOGI(TAG, "Wi-Fi connected");
 }
 
-// ===================== HTTP: Open-Meteo =====================
+// HTTP: Open-Meteo
 static bool http_get_temp_c(float &out_temp) {
   std::string body;
 
@@ -321,7 +337,7 @@ static bool http_get_temp_c(float &out_temp) {
   return ok;
 }
 
-// ===================== MAIN =====================
+// MAIN
 extern "C" void app_main(void) {
   ESP_ERROR_CHECK(nvs_flash_init());
   settings_init();
@@ -353,6 +369,8 @@ extern "C" void app_main(void) {
 
   // Start 60 s task (API + OLED)
   start_weather_task(ui, /*get_weather:*/ &http_get_temp_c, /*prio=*/4, /*stack=*/6144);
+
+  init_spiffs();
 
   http_server_start();
 }
